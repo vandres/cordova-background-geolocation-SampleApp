@@ -7,17 +7,14 @@ import { IonicPage, NavController, NavParams, Platform } from 'ionic-angular';
 // between public / private version of the plugin
 //
 import BackgroundGeolocation, {
-  Location,
-  HttpEvent,
-  MotionActivityEvent,
-  ProviderChangeEvent,
-  MotionChangeEvent,
-  ConnectivityChangeEvent,
   AuthorizationEvent,
-  TransistorAuthorizationToken
-} from "../../cordova-background-geolocation";
-
-import ENV from "../../ENV";
+  ConnectivityChangeEvent,
+  HttpEvent,
+  Location,
+  MotionActivityEvent,
+  MotionChangeEvent,
+  ProviderChangeEvent
+} from '../../cordova-background-geolocation';
 
 @IonicPage()
 @Component({
@@ -50,15 +47,6 @@ export class HelloWorldPage {
   }
 
   async configureBackgroundGeolocation() {
-    // Compose #url: tracker.transistorsoft.com/locations/{username}
-    let localStorage = (<any>window).localStorage;
-
-    let token:TransistorAuthorizationToken = await BackgroundGeolocation.findOrCreateTransistorAuthorizationToken(
-      localStorage.getItem('orgname'),
-      localStorage.getItem('username'),
-      ENV.TRACKER_HOST
-    );
-
     // Step 1:  Listen to events
     BackgroundGeolocation.onLocation(this.onLocation.bind(this));
     BackgroundGeolocation.onMotionChange(this.onMotionChange.bind(this));
@@ -71,25 +59,11 @@ export class HelloWorldPage {
 
     // Step 2:  Configure the plugin
     BackgroundGeolocation.ready({
-      reset: true,
-      debug: true,
       logLevel: BackgroundGeolocation.LOG_LEVEL_VERBOSE,
       distanceFilter: 10,
       stopTimeout: 1,
       stopOnTerminate: false,
       startOnBoot: true,
-      url: ENV.TRACKER_HOST + '/api/locations',
-      authorization: {  // <-- JWT authorization for tracker.transistorsoft.com
-        strategy: 'jwt',
-        accessToken: token.accessToken,
-        refreshToken: token.refreshToken,
-        refreshUrl: ENV.TRACKER_HOST + '/api/refresh_token',
-        refreshPayload: {
-          refresh_token: '{refreshToken}'
-        },
-        expires: token.expires
-      },
-      autoSync: true
     }, (state) => {
       console.log('- Configure success: ', state);
       // Update UI state (toggle switch, changePace button)
@@ -110,6 +84,7 @@ export class HelloWorldPage {
       BackgroundGeolocation.start();
     } else {
       BackgroundGeolocation.stop();
+      BackgroundGeolocation.sync();
     }
   }
 
